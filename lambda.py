@@ -3,7 +3,10 @@ import os
 import mercadopago
 
 def lambda_handler(event, context):
-    sdk = mercadopago.SDK(os.environ["ACCESS_TOKEN"])   
+    #initialize sdk
+    sdk = mercadopago.SDK(os.environ["ACCESS_TOKEN_PRO"])
+    #bodyGet = json.loads(event["body"])
+    
     payment_data = {
         "token": event["token"],
         "installments": int(event["installments"]),
@@ -17,11 +20,29 @@ def lambda_handler(event, context):
             }
         }
     }
-
+    
     payment_response = sdk.payment().create(payment_data)
     payment = payment_response["response"]
-    return{
-        "statusCode": 201,
-        "body": payment,
-        
-    }
+    
+
+    if payment["status"] == 400:
+        return {
+            "ok": "false",
+            "body": payment
+        }
+    else:
+        if payment["status"] == "approved":
+            return{
+                "ok": "true",
+                "statusCode": 201,
+                "body": payment,
+                "id": payment["id"],
+                "status": payment["status"],
+                "status_detail": payment["status_detail"]  
+            }
+        else:
+            return{
+                "ok": "false",
+                "body": payment,
+                "status": payment["status"]
+            }
